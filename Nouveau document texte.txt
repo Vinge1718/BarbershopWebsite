@@ -1,0 +1,141 @@
+<?php
+    
+    //PHP INCLUDES
+
+	include "connect.php";
+
+	if(isset($_POST['selected_employee']) && isset($_POST['selected_services']))
+	{
+
+		?>
+
+        <div class="calendar_slots">
+
+            <!-- NEXT 10 DAYS -->
+
+            <div class="appointments_days">
+                <?php
+                    $open_time = date('H:i',mktime(9,0,0));
+                    $close_time = date('H:i',mktime(22,0,0));
+                    $sum_duration = 20;
+                    $date_dyalo = date('Y-m-d');
+
+
+                    for($i = 0; $i < 10; $i++)
+                    {
+                        $date_dyalo = date('Y-m-d', strtotime($date_dyalo . ' +1 day'));
+                        echo "<div class = 'appointment_day'>";
+                            echo date('D', strtotime($date_dyalo));
+                            echo "<br>";
+                            echo date('d', strtotime($date_dyalo))." ".date('M', strtotime($date_dyalo));
+                        echo "</div>";
+                    } 
+                ?>
+            </div>
+
+            <!-- DAY HOURS -->
+
+            <div class = 'available_booking_hours'>
+                <?php
+
+                    //SELECTED SERVICES
+		            $desired_services = $_POST['selected_services'];
+		            
+                    //SELECTED EMPLOYEE
+		            $selected_employee = $_POST['selected_employee'];
+
+            		//Services Duration - End time expected
+		            $sum_duration = 0;
+		            foreach($desired_services as $service)
+		            {
+		                
+		                $stmtServices = $con->prepare("select service_duration from services where service_id = ?");
+		                $stmtServices->execute(array($service));
+		                $rowS =  $stmtServices->fetch();
+		                $sum_duration += $rowS['service_duration'];
+		                
+		            }
+            
+            
+		            $sum_duration = date('H:i',mktime(0,$sum_duration));
+		            $secs = strtotime($sum_duration)-strtotime("00:00:00");
+
+
+                    $open_time = date('H:i',mktime(9,0,0));
+
+                    $close_time = date('H:i',mktime(22,0,0));
+
+                    $start = $open_time;
+
+                    $secs = strtotime($sum_duration)-strtotime("00:00:00");
+                    $result = date("H:i:s",strtotime($start)+$secs);
+
+
+                    $date_dyalo = date('Y-m-d');
+
+                    for($i = 0; $i < 10; $i++)
+                    {
+                        echo "<div style = 'width: 15%;text-align: center;'>";
+
+                            $date_dyalo = date('Y-m-d', strtotime($date_dyalo . ' +1 day'));
+                            $start = $open_time;
+                            $secs = strtotime($sum_duration)-strtotime("00:00:00");
+                            $result = date("H:i:s",strtotime($start)+$secs);
+
+                            while($start >= $open_time && $result <= $close_time)
+                            {
+
+                                $stmt = $con->prepare("
+                                    Select * 
+                                    from appointments a, employees_schedule es
+                                    where
+                                        date(start_time) = ?
+                                        and
+                                        a.employee_id = es.employee_id
+                                        and
+                                        a.employee_id = ?
+                                        and
+                                        day_id = ?
+                                        and 
+                                        from_hour >= ?
+                                        and
+                                        to_hour <= ?
+                                        and
+                                        canceled = 0
+                                        and
+                                        (   
+                                            time(start_time) between ? and ?
+                                            or
+                                            time(end_time_expected) between ? and ?
+                                        )
+                                ");
+                                $stmt->execute(array($date_dyalo,$selected_employee,date('w', strtotime($date_dyalo)),$start,$result,$start,$result,$start,$result));
+                                $rows = $stmt->fetchAll();
+                        
+                                if($stmt->rowCount() != 0)
+                                {
+
+                                }
+                                else
+                                {
+                                    echo "<div data-date = $date_dyalo data-time = $start class = 'available_booking_hour' style = 'font-size: 14.5px;padding-top:24px;line-height: 1.29;cursor: pointer;'>";
+                                        echo $start;
+                                    echo "</div>";
+                                }
+                                
+
+                                $start = strtotime("+15 minutes", strtotime($start));
+                                $start =  date('H:i', $start);
+
+                                $secs = strtotime($sum_duration)-strtotime("00:00:00");
+                                $result = date("H:i",strtotime($start)+$secs);
+                            }
+
+                        echo "</div>";
+                    }
+                ?>
+            </div>
+        </div>
+	<?php
+	}
+?>
