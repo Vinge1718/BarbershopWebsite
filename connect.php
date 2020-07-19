@@ -1,7 +1,7 @@
 <?php
-    $dsn = 'mysql:host=localhost;dbname=barbershop_website';
-	$user = 'root';
-	$pass = '';
+    $dsn = 'mysql:host=db4free.net;dbname=barbershop_site';
+	$user = 'vinge1718';
+	$pass = 'T7aCcTr#13Hc';
 	$option = array(
 		PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8'
 	);
